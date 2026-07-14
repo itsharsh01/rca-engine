@@ -1,0 +1,199 @@
+
+<div style="padding:12px 0 4px">
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;padding:0 4px">
+    <span style="font-size:11px;font-family:var(--font-sans);padding:2px 8px;border-radius:8px;background:var(--bg-accent);color:var(--text-accent)">W1 · Ingestion</span>
+    <span style="font-size:11px;font-family:var(--font-sans);padding:2px 8px;border-radius:8px;background:var(--bg-warning);color:var(--text-warning)">W2 · RCA engine</span>
+    <span style="font-size:11px;font-family:var(--font-sans);padding:2px 8px;border-radius:8px;background:var(--bg-success);color:var(--text-success)">W3 · Stats layer</span>
+    <span style="font-size:11px;font-family:var(--font-sans);padding:2px 8px;border-radius:8px;background:var(--bg-danger);color:var(--text-danger)">W4 · Eval + replay</span>
+    <span style="font-size:11px;font-family:var(--font-sans);padding:2px 8px;border-radius:8px;background:var(--border-strong);color:var(--text-secondary)">W5 · Platform</span>
+  </div>
+  <div id="tree"></div>
+</div>
+
+<script>
+const D = [
+  {t:'d',n:'onboarding/',c:'user input + credential layer',p:'W1',bg:'var(--bg-accent)',cl:'var(--text-accent)',ch:[
+    {t:'f',n:'__init__.py',c:''},
+    {t:'f',n:'config_schema.py',c:'AppConfig · AppType · platform credential models'},
+    {t:'f',n:'connection_tester.py',c:'live API test per platform via httpx'},
+    {t:'f',n:'config_store.py',c:'save / load mercury_config.json'},
+    {t:'f',n:'wizard.py',c:'Typer + Rich CLI setup wizard'},
+  ]},
+  {t:'d',n:'adapters/',c:'source adapters — one per platform',p:'W1',bg:'var(--bg-accent)',cl:'var(--text-accent)',ch:[
+    {t:'f',n:'__init__.py',c:''},
+    {t:'f',n:'base.py',c:'SourceAdapter ABC + RawTrace + RawSpan schema'},
+    {t:'f',n:'langfuse_adapter.py',c:'Langfuse REST API paginated ingestion'},
+    {t:'f',n:'otel_jaeger_adapter.py',c:'Jaeger HTTP API ingestion'},
+    {t:'f',n:'helicone_adapter.py',c:'Helicone /v1/request/query ingestion'},
+    {t:'f',n:'phoenix_adapter.py',c:'Arize Phoenix /v1/spans ingestion'},
+  ]},
+  {t:'d',n:'core/',c:'data model · ingestion · PII · RCA',p:'W1·W2',bg:'var(--bg-accent)',cl:'var(--text-accent)',ch:[
+    {t:'f',n:'__init__.py',c:''},
+    {t:'f',n:'database.py',c:'async SQLAlchemy engine + get_session()'},
+    {t:'f',n:'models.py',c:'Org → Project → App → Trace → Span ORM'},
+    {t:'f',n:'pii_redactor.py',c:'Presidio + regex — redacts before DB write'},
+    {t:'f',n:'ingestion.py',c:'IngestPipeline — pull · redact · upsert'},
+    {t:'f',n:'taxonomy.py',c:'FaultClass enum — 6 fault types'},
+    {t:'f',n:'features.py',c:'FeatureExtractor → per-trace feature DataFrame'},
+    {t:'f',n:'seed_org.py',c:'create default Org / Project / App for dev'},
+    {t:'d',n:'rca/',c:'root-cause analysis engine',p:'W2',bg:'var(--bg-warning)',cl:'var(--text-warning)',ch:[
+      {t:'f',n:'__init__.py',c:''},
+      {t:'f',n:'diagnosis_schema.py',c:'RCADiagnosis pydantic output model'},
+      {t:'f',n:'agent.py',c:'tool-use LLM with get_span / get_stats tools'},
+      {t:'f',n:'rca_engine.py',c:'diagnose(trace_id) + diagnose_cluster()'},
+    ]},
+  ]},
+  {t:'d',n:'stats/',c:'full statistics layer',p:'W3',bg:'var(--bg-success)',cl:'var(--text-success)',ch:[
+    {t:'f',n:'__init__.py',c:''},
+    {t:'f',n:'attribution.py',c:'MI + logistic regression + Monte Carlo Shapley'},
+    {t:'f',n:'significance.py',c:'paired Wilcoxon + bootstrap CI + BH correction'},
+    {t:'f',n:'drift.py',c:'MMD kernel two-sample embedding drift'},
+    {t:'f',n:'changepoint.py',c:'CUSUM online change-point detection'},
+    {t:'f',n:'intervals.py',c:'Wilson score + bootstrap + power analysis'},
+  ]},
+  {t:'d',n:'eval/',c:'fault-injection evaluation harness',p:'W4',bg:'var(--bg-danger)',cl:'var(--text-danger)',ch:[
+    {t:'f',n:'__init__.py',c:''},
+    {t:'f',n:'fault_injector.py',c:'break app in 6 known ways with restore'},
+    {t:'f',n:'labeler.py',c:'write ground-truth FaultClass labels to DB'},
+    {t:'f',n:'scorer.py',c:'top-1 accuracy + LLM judge + CI bounds'},
+    {t:'f',n:'run_eval.py',c:'end-to-end eval CLI → scorecard.json'},
+    {t:'f',n:'scorecard.json',c:'generated — committed accuracy report with CIs'},
+  ]},
+  {t:'d',n:'replay/',c:'golden set + what-if replay',p:'W4',bg:'var(--bg-danger)',cl:'var(--text-danger)',ch:[
+    {t:'f',n:'__init__.py',c:''},
+    {t:'f',n:'golden_set.py',c:'LLM-generated regression + adversarial suite'},
+    {t:'f',n:'what_if.py',c:'A/B config replay + Wilcoxon comparison'},
+    {t:'f',n:'golden_set.json',c:'generated + human-verified test cases'},
+  ]},
+  {t:'d',n:'api/',c:'platform API + SDK',p:'W5',bg:'var(--border-strong)',cl:'var(--text-secondary)',ch:[
+    {t:'f',n:'__init__.py',c:''},
+    {t:'f',n:'main.py',c:'FastAPI app — mounts all routers'},
+    {t:'f',n:'sdk.py',c:'MercuryClient — pip-installable typed SDK'},
+    {t:'d',n:'routes/',c:'',ch:[
+      {t:'f',n:'__init__.py',c:''},
+      {t:'f',n:'ingest.py',c:'POST /ingest/run'},
+      {t:'f',n:'rca.py',c:'POST /rca/diagnose  POST /rca/diagnose-cluster'},
+      {t:'f',n:'eval.py',c:'POST /eval/inject-faults  GET /eval/scorecard'},
+      {t:'f',n:'replay.py',c:'POST /replay/compare'},
+      {t:'f',n:'stats.py',c:'GET /stats/drift  GET /stats/changepoints'},
+    ]},
+  ]},
+  {t:'d',n:'benchmark/',c:'public reproducible benchmark',p:'W5',bg:'var(--border-strong)',cl:'var(--text-secondary)',ch:[
+    {t:'f',n:'run_benchmark.py',c:'self-contained — runs on SQLite, no setup'},
+    {t:'f',n:'labeled_faults.json',c:'versioned fault-injection dataset'},
+    {t:'f',n:'leaderboard.csv',c:'model · date · top1 · false-alarm-rate'},
+    {t:'f',n:'README.md',c:'3-command quickstart + submit instructions'},
+  ]},
+  {t:'d',n:'tests/',c:'all pytest tests',ch:[
+    {t:'f',n:'test_connection_tester.py',c:'respx mocks for all 4 platforms'},
+    {t:'f',n:'test_pii_redactor.py',c:'recall ≥ 0.95 on seeded PII'},
+    {t:'f',n:'test_attribution.py',c:'Shapley + MI + logistic regression'},
+    {t:'f',n:'test_drift.py',c:'MMD on seeded distribution shifts'},
+    {t:'f',n:'test_significance.py',c:'Wilcoxon + bootstrap CI'},
+    {t:'f',n:'test_changepoint.py',c:'CUSUM on synthetic step-change series'},
+    {t:'f',n:'test_intervals.py',c:'Wilson + power analysis'},
+  ]},
+  {t:'d',n:'scripts/',c:'one-off CLI runners',ch:[
+    {t:'f',n:'ingest.py',c:'python scripts/ingest.py --app-id ... --lookback-hours 24'},
+    {t:'f',n:'inject_faults.py',c:'run all 6 fault classes + label DB'},
+    {t:'f',n:'run_replay.py',c:'compare two config variants with significance'},
+  ]},
+  {t:'d',n:'alembic/',c:'DB migrations',ch:[
+    {t:'f',n:'env.py',c:'async migration environment'},
+    {t:'f',n:'script.py.mako',c:'migration file template'},
+    {t:'d',n:'versions/',c:'',ch:[
+      {t:'f',n:'001_initial.py',c:'Org · Project · App · Trace · Span tables'},
+      {t:'f',n:'002_diagnosis.py',c:'adds Diagnosis table + indexes'},
+    ]},
+  ]},
+  {t:'d',n:'docs/',c:'documentation',ch:[
+    {t:'f',n:'architecture.md',c:'scope decisions · data flow · adapter contract'},
+    {t:'f',n:'rca_accuracy_report.md',c:'scorecard template filled by run_eval.py'},
+    {t:'f',n:'CONTRIBUTING.md',c:'how to add adapter · run tests · submit PR'},
+  ]},
+  {t:'f',n:'mercury_cli.py',c:'entry point — mercury setup / status / ingest'},
+  {t:'f',n:'mercury_config.json',c:'generated on setup — gitignored'},
+  {t:'f',n:'alembic.ini',c:'points to DATABASE_URL env var'},
+  {t:'f',n:'pyproject.toml',c:'all deps + mercury-ai-sdk package config'},
+  {t:'f',n:'.env.example',c:'all required env vars with placeholder values'},
+  {t:'f',n:'.gitignore',c:'mercury_config.json · .env · __pycache__'},
+  {t:'f',n:'README.md',c:'pip install + quickstart + benchmark link'},
+];
+
+const wrap = document.getElementById('tree');
+
+const rh = document.createElement('div');
+rh.style='display:flex;align-items:center;gap:7px;padding:2px 6px 8px;';
+rh.innerHTML='<i class="ti ti-folder-open" aria-hidden="true" style="font-size:16px;color:var(--text-accent)"></i><span style="font-family:var(--font-mono);font-size:13px;font-weight:500;color:var(--text-primary)">mercury-ai/</span>';
+wrap.appendChild(rh);
+
+function build(items, container, pfx, depth) {
+  items.forEach((item, i) => {
+    const last = i === items.length - 1;
+    const conn = last ? '└── ' : '├── ';
+    const cPfx = last ? '    ' : '│   ';
+
+    const row = document.createElement('div');
+    row.style='display:flex;align-items:center;padding:2px 4px;border-radius:3px;min-height:22px;gap:0;';
+
+    const pre = document.createElement('span');
+    pre.style='font-family:var(--font-mono);font-size:11px;color:var(--border-stronger);white-space:pre;flex-shrink:0;';
+    pre.textContent = pfx + conn;
+    row.appendChild(pre);
+
+    const ic = document.createElement('i');
+    ic.setAttribute('aria-hidden','true');
+    ic.className = item.t === 'd' ? 'ti ti-folder' : 'ti ti-file-text';
+    ic.style = 'font-size:13px;flex-shrink:0;margin-right:5px;color:' + (item.t==='d' ? 'var(--text-accent)' : 'var(--text-muted)');
+    row.appendChild(ic);
+
+    const nm = document.createElement('span');
+    nm.style = 'font-family:var(--font-mono);font-size:12px;color:var(--text-primary);flex-shrink:0;' + (item.t==='d' ? 'font-weight:500;' : '');
+    nm.textContent = item.n;
+    row.appendChild(nm);
+
+    if (item.p) {
+      const bg = item.bg || 'var(--bg-accent)';
+      const cl = item.cl || 'var(--text-accent)';
+      const badge = document.createElement('span');
+      badge.style='font-family:var(--font-sans);font-size:10px;padding:1px 6px;border-radius:8px;margin-left:7px;flex-shrink:0;background:'+bg+';color:'+cl+';';
+      badge.textContent = item.p;
+      row.appendChild(badge);
+    }
+
+    if (item.c) {
+      const cmt = document.createElement('span');
+      cmt.style='font-family:var(--font-sans);font-size:11px;color:var(--text-muted);margin-left:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;';
+      cmt.textContent = '# ' + item.c;
+      row.appendChild(cmt);
+    }
+
+    container.appendChild(row);
+
+    if (item.t === 'd' && item.ch) {
+      const sub = document.createElement('div');
+      const startOpen = depth === 0;
+      if (!startOpen) { sub.style.display = 'none'; ic.className = 'ti ti-folder'; }
+      container.appendChild(sub);
+      build(item.ch, sub, pfx + cPfx, depth + 1);
+
+      let open = startOpen;
+      row.style.cursor = 'pointer';
+      row.onmouseenter = () => row.style.background = 'var(--surface-1)';
+      row.onmouseleave = () => row.style.background = '';
+      row.onclick = () => {
+        open = !open;
+        sub.style.display = open ? '' : 'none';
+        ic.className = open ? 'ti ti-folder-open' : 'ti ti-folder';
+      };
+    } else if (item.t === 'f') {
+      row.style.cursor = 'pointer';
+      row.onmouseenter = () => row.style.background = 'var(--surface-1)';
+      row.onmouseleave = () => row.style.background = '';
+      row.onclick = () => sendPrompt('Explain what goes inside ' + item.n + ' in Mercury AI — what classes, functions, and logic it should contain');
+    }
+  });
+}
+
+build(D, wrap, '', 0);
+</script>

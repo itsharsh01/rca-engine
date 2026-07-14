@@ -1,0 +1,17 @@
+[project]
+name = "mercury-ai"
+version = "0.1.0"
+description = "Mercury AI Observability Platform and RCA Engine"
+dependencies = [
+    "fastapi>=0.100.0",
+    "uvicorn>=0.20.0",
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
+    "sqlalchemy>=2.0.0",
+    "alembic>=1.11.0",
+    "typer>=0.9.0",
+    "rich>=13.0.0",
+    "httpx>=0.24.0",
+    "motor>=3.0.0",
+    "dnspython>=2.0.0",
+]

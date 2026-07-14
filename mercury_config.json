@@ -1,0 +1,17 @@
+{
+  "version": "0.1.0",
+  "project_name": "Mercury AI",
+  "user": {
+    "email": "harsh@gmail.com",
+    "password_hash": "pbkdf2:4321hsrah"
+  },
+  "observability": {
+    "langsmith": {
+      "credentials": {
+        "api_key": "mock-api-key-value",
+        "endpoint": "https://api.smith.langchain.com"
+      },
+      "connected": true
+    }
+  }
+}
