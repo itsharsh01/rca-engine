@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, status
-from api.routes.onboarding_schemas import UserSignupRequest, PlatformConfigureRequest, TestConnectionRequest
+from api.routes.onboarding_schemas import UserSignupRequest, UserLoginRequest, PlatformConfigureRequest, TestConnectionRequest
 from onboarding.connection_tester import test_platform_connection
 from core.database import get_database
 
@@ -29,6 +29,33 @@ async def signup(body: UserSignupRequest):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to process signup: {str(e)}"
+        )
+
+@router.post("/login")
+async def login(body: UserLoginRequest):
+    try:
+        db = get_database()
+        user = await db.users.find_one({"email": body.email})
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid email or password"
+            )
+            
+        expected_hash = f"pbkdf2:{body.password[::-1]}"
+        if user.get("password_hash") != expected_hash:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid email or password"
+            )
+
+        return {"status": "success", "message": "Login successful"}
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to process login: {str(e)}"
         )
 
 @router.post("/test-connection")

@@ -12,4 +12,8 @@ class Settings(BaseSettings):
     db_url: str
     db_name: str = "mercury-ai"
 
+    gcp_project_id: str = ""
+    gcp_topic_id: str = ""
+    gcp_subscription_id: str = ""
+
 settings = Settings()
